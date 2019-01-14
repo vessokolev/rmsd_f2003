@@ -21,7 +21,7 @@ program demo
 !
 ! Author : Veselin Kolev <vesso.kolev@gmail.com>
 ! License: BSD
-! Version: 2018121200
+! Version: 2018121800
 !
 use iso_c_binding,only:C_INT,C_FLOAT
 !
