@@ -20,7 +20,8 @@ subroutine s_rmsd_fast_calc_rmsd_and_rotation(A,minScore,npro,E0,rmsd,rot,iretur
 !
 ! NOTE: Use double precision in the computations presented bellow. Eploying
 !       single precision floating point data can turn the elements of the
-!       rotation matrix "rot" into zeroes.
+!       rotation matrix "rot" into zeroes. That will result into total
+!       failure of the coordinate super imposition.
 !
 ! Author : Veselin Kolev <vesso.kolev@gmail.com>
 ! License: BSD
