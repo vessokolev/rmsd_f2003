@@ -4,7 +4,7 @@
 
 #### Author: Veselin Kolev <vesso.kolev@gmail.com>
 #### Released under BSD licence.
-#### Version: 2018121200
+#### Version: 2019011500
 
 #### Content:
 
