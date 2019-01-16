@@ -18,11 +18,15 @@ subroutine s_rmsd_fast_calc_rmsd_and_rotation(A,minScore,npro,E0,rmsd,rot,iretur
 !    determination of the optimal rotational matrix for do_counted
 !    superpositions." Journal of Computational Chemistry 31(7):1561-1563
 !
+! NOTE: Use double precision in the computations presented bellow. Eploying
+!       single precision floating point data can turn the elements of the
+!       rotation matrix "rot" into zeroes.
+!
 ! Author : Veselin Kolev <vesso.kolev@gmail.com>
 ! License: BSD
-! Version: 2018121200
+! Version: 2019011500
 !
-use iso_c_binding,only:C_INT,C_FLOAT
+use iso_c_binding,only:C_INT,C_FLOAT,C_DOUBLE
 !
 implicit none 
 !
@@ -39,98 +43,98 @@ integer(C_INT),intent(out) :: ireturn
 ! Local variables:
 !
 integer(C_INT)             :: i
-real(C_FLOAT)              :: Sxx
-real(C_FLOAT)              :: Sxy
-real(C_FLOAT)              :: Sxz
-real(C_FLOAT)              :: Syx
-real(C_FLOAT)              :: Syy
-real(C_FLOAT)              :: Syz
-real(C_FLOAT)              :: Szx
-real(C_FLOAT)              :: Szy
-real(C_FLOAT)              :: Szz
-real(C_FLOAT)              :: Szz2
-real(C_FLOAT)              :: Syy2
-real(C_FLOAT)              :: Sxx2
-real(C_FLOAT)              :: Sxy2
-real(C_FLOAT)              :: Syz2
-real(C_FLOAT)              :: Sxz2
-real(C_FLOAT)              :: Syx2
-real(C_FLOAT)              :: Szy2
-real(C_FLOAT)              :: Szx2
-real(C_FLOAT)              :: SyzSzymSyySzz2
-real(C_FLOAT)              :: Sxx2Syy2Szz2Syz2Szy2
-real(C_FLOAT)              :: Sxy2Sxz2Syx2Szx2
-real(C_FLOAT)              :: SxzpSzx
-real(C_FLOAT)              :: SyzpSzy
-real(C_FLOAT)              :: SxypSyx
-real(C_FLOAT)              :: SyzmSzy
-real(C_FLOAT)              :: SxzmSzx
-real(C_FLOAT)              :: SxymSyx
-real(C_FLOAT)              :: SxxpSyy
-real(C_FLOAT)              :: SxxmSyy
-real(C_FLOAT)              :: C(3)
-real(C_FLOAT)              :: mxEigenV
-real(C_FLOAT)              :: oldg
-real(C_FLOAT)              :: b
-real(C_FLOAT)              :: aa
-real(C_FLOAT)              :: delta
-real(C_FLOAT)              :: rms
-real(C_FLOAT)              :: qsqr
-real(C_FLOAT)              :: q1
-real(C_FLOAT)              :: q2
-real(C_FLOAT)              :: q3
-real(C_FLOAT)              :: q4
-real(C_FLOAT)              :: normq
-real(C_FLOAT)              :: a11
-real(C_FLOAT)              :: a12
-real(C_FLOAT)              :: a13
-real(C_FLOAT)              :: a14
-real(C_FLOAT)              :: a21
-real(C_FLOAT)              :: a22
-real(C_FLOAT)              :: a23
-real(C_FLOAT)              :: a24
-real(C_FLOAT)              :: a31
-real(C_FLOAT)              :: a32
-real(C_FLOAT)              :: a33
-real(C_FLOAT)              :: a34
-real(C_FLOAT)              :: a41
-real(C_FLOAT)              :: a42
-real(C_FLOAT)              :: a43
-real(C_FLOAT)              :: a44
-real(C_FLOAT)              :: a2
-real(C_FLOAT)              :: x2
-real(C_FLOAT)              :: y2
-real(C_FLOAT)              :: z2
-real(C_FLOAT)              :: xy
-real(C_FLOAT)              :: az
-real(C_FLOAT)              :: zx
-real(C_FLOAT)              :: ay
-real(C_FLOAT)              :: yz
-real(C_FLOAT)              :: ax
-real(C_FLOAT)              :: a3344_4334
-real(C_FLOAT)              :: a3244_4234
-real(C_FLOAT)              :: a3243_4233
-real(C_FLOAT)              :: a3143_4133
-real(C_FLOAT)              :: a3144_4134
-real(C_FLOAT)              :: a3142_4132
-real(C_FLOAT),parameter    :: evecprec=1.0e-6
-real(C_FLOAT),parameter    :: evalprec=1.0e-11
-real(C_FLOAT)              :: a1324_1423
-real(C_FLOAT)              :: a1224_1422
-real(C_FLOAT)              :: a1223_1322
-real(C_FLOAT)              :: a1124_1421
-real(C_FLOAT)              :: a1123_1321
-real(C_FLOAT)              :: a1122_1221
+real(C_DOUBLE)             :: Sxx
+real(C_DOUBLE)             :: Sxy
+real(C_DOUBLE)             :: Sxz
+real(C_DOUBLE)             :: Syx
+real(C_DOUBLE)             :: Syy
+real(C_DOUBLE)             :: Syz
+real(C_DOUBLE)             :: Szx
+real(C_DOUBLE)             :: Szy
+real(C_DOUBLE)             :: Szz
+real(C_DOUBLE)             :: Szz2
+real(C_DOUBLE)             :: Syy2
+real(C_DOUBLE)             :: Sxx2
+real(C_DOUBLE)             :: Sxy2
+real(C_DOUBLE)             :: Syz2
+real(C_DOUBLE)             :: Sxz2
+real(C_DOUBLE)             :: Syx2
+real(C_DOUBLE)             :: Szy2
+real(C_DOUBLE)             :: Szx2
+real(C_DOUBLE)             :: SyzSzymSyySzz2
+real(C_DOUBLE)             :: Sxx2Syy2Szz2Syz2Szy2
+real(C_DOUBLE)             :: Sxy2Sxz2Syx2Szx2
+real(C_DOUBLE)             :: SxzpSzx
+real(C_DOUBLE)             :: SyzpSzy
+real(C_DOUBLE)             :: SxypSyx
+real(C_DOUBLE)             :: SyzmSzy
+real(C_DOUBLE)             :: SxzmSzx
+real(C_DOUBLE)             :: SxymSyx
+real(C_DOUBLE)             :: SxxpSyy
+real(C_DOUBLE)             :: SxxmSyy
+real(C_DOUBLE)             :: C(3)
+real(C_DOUBLE)             :: mxEigenV
+real(C_DOUBLE)             :: oldg
+real(C_DOUBLE)             :: b
+real(C_DOUBLE)             :: aa
+real(C_DOUBLE)             :: delta
+real(C_DOUBLE)             :: rms
+real(C_DOUBLE)             :: qsqr
+real(C_DOUBLE)             :: q1
+real(C_DOUBLE)             :: q2
+real(C_DOUBLE)             :: q3
+real(C_DOUBLE)             :: q4
+real(C_DOUBLE)             :: normq
+real(C_DOUBLE)             :: a11
+real(C_DOUBLE)             :: a12
+real(C_DOUBLE)             :: a13
+real(C_DOUBLE)             :: a14
+real(C_DOUBLE)             :: a21
+real(C_DOUBLE)             :: a22
+real(C_DOUBLE)             :: a23
+real(C_DOUBLE)             :: a24
+real(C_DOUBLE)             :: a31
+real(C_DOUBLE)             :: a32
+real(C_DOUBLE)             :: a33
+real(C_DOUBLE)             :: a34
+real(C_DOUBLE)             :: a41
+real(C_DOUBLE)             :: a42
+real(C_DOUBLE)             :: a43
+real(C_DOUBLE)             :: a44
+real(C_DOUBLE)             :: a2
+real(C_DOUBLE)             :: x2
+real(C_DOUBLE)             :: y2
+real(C_DOUBLE)             :: z2
+real(C_DOUBLE)             :: xy
+real(C_DOUBLE)             :: az
+real(C_DOUBLE)             :: zx
+real(C_DOUBLE)             :: ay
+real(C_DOUBLE)             :: yz
+real(C_DOUBLE)             :: ax
+real(C_DOUBLE)             :: a1324_1423
+real(C_DOUBLE)             :: a1224_1422
+real(C_DOUBLE)             :: a1223_1322
+real(C_DOUBLE)             :: a1124_1421
+real(C_DOUBLE)             :: a1123_1321
+real(C_DOUBLE)             :: a1122_1221
+real(C_DOUBLE)             :: a3344_4334
+real(C_DOUBLE)             :: a3244_4234
+real(C_DOUBLE)             :: a3243_4233
+real(C_DOUBLE)             :: a3143_4133
+real(C_DOUBLE)             :: a3144_4134
+real(C_DOUBLE)             :: a3142_4132
+real(C_DOUBLE),parameter   :: evecprec=1.0e-6
+real(C_DOUBLE),parameter   :: evalprec=1.0e-11
 
-Sxx=A(1)
-Sxy=A(2)
-Sxz=A(3)
-Syx=A(4)
-Syy=A(5)
-Syz=A(6)
-Szx=A(7)
-Szy=A(8)
-Szz=A(9)
+Sxx=dble(A(1))
+Sxy=dble(A(2))
+Sxz=dble(A(3))
+Syx=dble(A(4))
+Syy=dble(A(5))
+Syz=dble(A(6))
+Szx=dble(A(7))
+Szy=dble(A(8))
+Szz=dble(A(9))
 !
 Sxx2=Sxx*Sxx
 Syy2=Syy*Syy
@@ -176,7 +180,7 @@ C(1)=Sxy2Sxz2Syx2Szx2*Sxy2Sxz2Syx2Szx2&
 !
 ! Newton-Raphson
 !
-mxEigenV = E0
+mxEigenV = dble(E0)
 !
 do i=1,50
    !
@@ -199,8 +203,8 @@ endif
 !
 ! the abs() is to guard against extremely small, but *negative* numbers due to floating point error
 !
-rms=sqrt(abs(2*(E0-mxEigenV)/npro))
-rmsd=rms
+rms=sqrt(abs(2*(dble(E0)-mxEigenV)/npro))
+rmsd=real(rms)
 !
 if ((minScore.gt.0).and.(rms.lt.minScore)) then
    ireturn=-1 ! Don't bother with rotation. 
@@ -325,17 +329,17 @@ ay=q1*q3
 yz=q3*q4
 ax=q1*q2
 !
-rot(1)=a2+x2-y2-z2
-rot(2)=2*(xy+az)
-rot(3)=2*(zx-ay)
+rot(1)=real(a2+x2-y2-z2)
+rot(2)=real(2*(xy+az))
+rot(3)=real(2*(zx-ay))
 !
-rot(4)=2*(xy-az)
-rot(5)=a2-x2+y2-z2
-rot(6)=2*(yz+ax)
+rot(4)=real(2*(xy-az))
+rot(5)=real(a2-x2+y2-z2)
+rot(6)=real(2*(yz+ax))
 !
-rot(7)=2*(zx+ay)
-rot(8)=2*(yz-ax)
-rot(9)=a2-x2-y2+z2
+rot(7)=real(2*(zx+ay))
+rot(8)=real(2*(yz-ax))
+rot(9)=real(a2-x2-y2+z2)
 !
 ireturn=1
 
