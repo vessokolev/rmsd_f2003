@@ -1,8 +1,8 @@
-subroutine s_rmsd_superimpose(num_atoms,do_count,x1,x2,rmsd)
+subroutine s_rmsd_superimpose(num_atoms,do_count,coord1,coord2,rmsd)
 !
 ! This subroutine compares two sets of points (atoms) of the same size (!!!),
 ! computes RMSD, and superimposes the two coordinate sets - by translating and
-! rotating the set "x2". Do back up the array "x2" to produce a copy of the
+! rotating the set "coord2". Do back up the array "coord2" to produce a copy of the
 ! previous values, in case they need to be restored back later.
 !
 ! This subroutine is part of the implementation of Quaternion Characteristic
@@ -25,7 +25,7 @@ subroutine s_rmsd_superimpose(num_atoms,do_count,x1,x2,rmsd)
 !
 ! Author : Veselin Kolev <vesso.kolev@gmail.com>
 ! License: BSD
-! Version: 2018121200
+! Version: 2019011700
 !
 use iso_c_binding,only:C_INT,C_FLOAT
 !
@@ -35,8 +35,8 @@ implicit none
 !
 integer(C_INT),intent(in)   :: num_atoms
 logical,intent(in)          :: do_count(num_atoms)
-real(C_FLOAT),intent(in)    :: x1(3,num_atoms)
-real(C_FLOAT),intent(inout) :: x2(3,num_atoms)
+real(C_FLOAT),intent(in)    :: coord1(3,num_atoms)
+real(C_FLOAT),intent(inout) :: coord2(3,num_atoms)
 real(C_FLOAT),intent(out)   :: rmsd
 !
 ! Local variables:
@@ -49,28 +49,28 @@ integer(C_INT),parameter    :: t(6,3)=reshape(source=(/1,1,2,2,3,3,4,1,5,2,6,3,7
 real(C_FLOAT)               :: A(9)
 real(C_FLOAT)               :: E0
 real(C_FLOAT)               :: rot(9)
-real(C_FLOAT)               :: x1_bak(3,num_atoms)
-real(C_FLOAT)               :: x2_bak(3,num_atoms)
+real(C_FLOAT)               :: coord1_bak(3,num_atoms)
+real(C_FLOAT)               :: coord2_bak(3,num_atoms)
 real(C_FLOAT)               :: center1(3)
 real(C_FLOAT)               :: center2(3)
 real(C_FLOAT)               :: x_tmp(3)
 
 ! Create a copy of the input coordinates:
 !
-x1_bak=x1(:,:)
-x2_bak=x2(:,:)
+coord1_bak=coord1(:,:)
+coord2_bak=coord2(:,:)
 !
 ! Center the atom coordinates for the first molecule:
 !
-call s_rmsd_center_coords(num_atoms,do_count,x1_bak,ncount)
+call s_rmsd_center_coords(num_atoms,do_count,coord1_bak,ncount)
 !
 ! Center the atom coordinates for the second molecule:
 !
-call s_rmsd_center_coords(num_atoms,do_count,x2_bak,ncount)
+call s_rmsd_center_coords(num_atoms,do_count,coord2_bak,ncount)
 !
 ! Compute the inner product of the coordinates of the molecules:
 !
-call s_rmsd_inner_product(num_atoms,do_count,x1_bak,x2_bak,A,E0)
+call s_rmsd_inner_product(num_atoms,do_count,coord1_bak,coord2_bak,A,E0)
 !
 ! Compute the RMSD and the corresponding rotation matrix:
 !
@@ -88,8 +88,8 @@ do i=1,num_atoms
    !
    if (do_count(i)) then
       !
-      center1=center1+x1(:,i)
-      center2=center2+x2(:,i)
+      center1=center1+coord1(:,i)
+      center2=center2+coord2(:,i)
       !
    end if
    !
@@ -108,21 +108,21 @@ do i=1,num_atoms
    ! Shift the atom coordinates of the first molecule with respect
    ! to their own geometric center vector:
    !
-   x2(:,i)=x2(:,i)-center2
+   coord2(:,i)=coord2(:,i)-center2
    !
    ! Backup the centered coordinates before starting the rotation.
    ! They will be subject of alteration during the rotation process
    ! that follows bellow!
    !
-   x_tmp=x2(:,i)
+   x_tmp=coord2(:,i)
    !
    ! Do the rotation direction by direction:
    !
    do j=1,3
       !
-      x2(j,i)=rot(t(1,j))*x_tmp(t(2,j))+&
-              rot(t(3,j))*x_tmp(t(4,j))+&
-              rot(t(5,j))*x_tmp(t(6,j))
+      coord2(j,i)=rot(t(1,j))*x_tmp(t(2,j))+&
+                  rot(t(3,j))*x_tmp(t(4,j))+&
+                  rot(t(5,j))*x_tmp(t(6,j))
       !
    end do
    !
@@ -130,7 +130,7 @@ do i=1,num_atoms
    ! with respect to the geometric center vector of the atom coordinates
    ! of the first molecule:
    !
-   x2(:,i)=x2(:,i)+center1
+   coord2(:,i)=coord2(:,i)+center1
    !
 end do
 
